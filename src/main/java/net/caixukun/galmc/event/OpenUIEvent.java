@@ -24,11 +24,12 @@ public class OpenUIEvent {
     public static int circle = -1;
     @SubscribeEvent
     public void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.side == LogicalSide.CLIENT) {
+        if (event.side == LogicalSide.CLIENT){
             if(cg) {
                 circle = Minecraft.getInstance().options.guiScale().get();
                 Minecraft.getInstance().options.guiScale().set(4);
                 Minecraft.getInstance().options.save();
+                Minecraft.getInstance().resizeDisplay();
                 if(event.player.getUUID()==uuid){
                     Minecraft.getInstance().setScreen(new CGGalleryScreen(uuid));
                     uuid=null;
@@ -40,6 +41,7 @@ public class OpenUIEvent {
                     circle = Minecraft.getInstance().options.guiScale().get();
                     Minecraft.getInstance().options.guiScale().set(4);
                     Minecraft.getInstance().options.save();
+                    Minecraft.getInstance().resizeDisplay();
                     Minecraft.getInstance().setScreen(new GalScreen(path, uuid));
                     path = null;
                     uuid = null;
@@ -55,6 +57,7 @@ public class OpenUIEvent {
             if(circle != -1){
                 Minecraft.getInstance().options.guiScale().set(circle);
                 Minecraft.getInstance().options.save();
+                Minecraft.getInstance().resizeDisplay();
                 circle = -1;
             }
             Screen currentScreen = event.getScreen();

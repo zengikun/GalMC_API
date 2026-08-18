@@ -55,8 +55,6 @@ public class TextEntry {
                 galScreen.renderContain(guiGraphics, screenWidth, screenHeight, background);
                 //渲染人物
                 this.render_character(guiGraphics, galScreen);
-                //渲染UI
-                galScreen.renderUI(guiGraphics);
                 //渲染文本
                 if (galScreen.rendtext) this.render_text(guiGraphics, galScreen);
             } else if (Objects.equals(render_execute.get("type").getAsString(), "pingyi")) {
@@ -93,10 +91,10 @@ public class TextEntry {
                 int n_ix = render_execute.get("data").getAsJsonObject().get("image_x").getAsInt();
                 int n_iy = render_execute.get("data").getAsJsonObject().get("image_y").getAsInt();
                 guiGraphics.blit(resourceLocation,
-                        galScreen.getX(n_x), galScreen.getY(n_y), // 位置
+                        galScreen.getX(n_x,true), galScreen.getY(n_y,true), // 位置
                         0, 0,           // 纹理坐标
-                        galScreen.getX(n_ix), galScreen.getY(n_iy),  // 尺寸
-                        galScreen.getX(n_ix), galScreen.getY(n_iy)        // 纹理尺寸
+                        galScreen.getX(n_ix,false), galScreen.getY(n_iy,false),  // 尺寸
+                        galScreen.getX(n_ix,false), galScreen.getY(n_iy,false)        // 纹理尺寸
                 );
                 //渲染UI
                 galScreen.renderUI(guiGraphics);
@@ -112,8 +110,6 @@ public class TextEntry {
             galScreen.renderContain(guiGraphics, screenWidth, screenHeight, background);
             //渲染人物
             this.render_character(guiGraphics, galScreen);
-            //渲染UI
-            galScreen.renderUI(guiGraphics);
             //渲染文本
             if (galScreen.rendtext) this.render_text(guiGraphics, galScreen);
 
@@ -123,58 +119,61 @@ public class TextEntry {
     int p=0;
     int p1=30;
     private void render_text(GuiGraphics guiGraphics, GalScreen galScreen){
-        String[] parts = text.replace("：", ":").split(":", 2);
-        String a = "";
-        String b = "";
-        try {
-            b = parts[1];
-            if (p == galScreen.text_speed) {
-                if (rs.length() < parts[1].length()) rs = rs + parts[1].charAt(rs.length());
-                p = 0;
+        if(!Objects.equals(text, "null")) {
+            galScreen.renderUI(guiGraphics);
+            String[] parts = text.replace("：", ":").split(":", 2);
+            String a = "";
+            String b = "";
+            try {
+                b = parts[1];
+                if (p == galScreen.text_speed) {
+                    if (rs.length() < parts[1].length()) rs = rs + parts[1].charAt(rs.length());
+                    p = 0;
 
+                }
+                p++;
+                a = parts[0];
+            } catch (ArrayIndexOutOfBoundsException e) {
+                rs = text;
+                a = "";
             }
-            p++;
-            a = parts[0];
-        }catch (ArrayIndexOutOfBoundsException e){
-            rs = text;
-            a="";
-        }
-        if(galScreen.fonta != null) {
-            // 渲染剧情文本
+            if (galScreen.fonta != null) {
+                // 渲染剧情文本
+                guiGraphics.drawString(
+                        galScreen.fonta,
+                        Component.literal(rs),
+                        galScreen.getX(120,true), galScreen.getY(900,true),
+                        0xFFFFFF, // 白色
+                        true     // 是否带阴影
+                );
+                if (Objects.equals(rs, b)) {
+                    p1--;
+                    if (galScreen.auto && p1 <= 0) galScreen.next();
+                }
+            } else {
+                LOGGER.error("字体加载错误，请重试");
+            }
+
+            if (Objects.equals(a, "旁白")) {
+                a = "";
+            }
             guiGraphics.drawString(
                     galScreen.fonta,
-                    Component.literal(rs),
-                    galScreen.getX(120), galScreen.getY(900),
-                    0xFFFFFF, // 白色
-                    true     // 是否带阴影
+                    Component.literal(a),
+                    galScreen.getX(75,true), galScreen.getY(750,true),
+                    0xFFFFFF,
+                    true
             );
-            if(Objects.equals(rs, b)){
-                p1--;
-                if(galScreen.auto && p1<=0) galScreen.next();
-            }
-        }else {
-            LOGGER.error("字体加载错误，请重试");
         }
-
-        if (Objects.equals(a, "旁白")){
-            a = "";
-        }
-        guiGraphics.drawString(
-                galScreen.fonta,
-                Component.literal(a),
-                galScreen.getX(75),galScreen.getY(750),
-                0xFFFFFF,
-                true
-        );
 
     }
     private void render_character(GuiGraphics guiGraphics,GalScreen galScreen){
         guiGraphics.blit(
                 this.character,
-                galScreen.getX(x), galScreen.getY(y), // 位置
+                galScreen.getX(x,true), galScreen.getY(y,true), // 位置
                 0, 0,           // 纹理坐标
-                galScreen.getX(ix), galScreen.getY(iy),  // 尺寸
-                galScreen.getX(ix), galScreen.getY(iy)        // 纹理尺寸
+                galScreen.getX(ix,false), galScreen.getY(iy,false),  // 尺寸
+                galScreen.getX(ix,false), galScreen.getY(iy,false)        // 纹理尺寸
         );
     }
     public boolean is_sound(){

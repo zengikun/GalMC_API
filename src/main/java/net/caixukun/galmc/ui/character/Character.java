@@ -3,8 +3,10 @@ package net.caixukun.galmc.ui.character;
 import com.google.gson.*;
 import com.mojang.logging.LogUtils;
 import net.caixukun.galmc.Galmc_api;
+import net.caixukun.galmc.resource.GalResourceManger;
 import net.caixukun.galmc.ui.GalScreen;
 import net.caixukun.your_wife.render.character_render.CharacterMethods;
+import net.minecraft.ResourceLocationException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
@@ -23,9 +25,21 @@ public class Character {
     public static final Logger LOGGER = LogUtils.getLogger();
     public Character(String resource){
         System.out.println(resource);
-        ResourceLocation resourceLocation = ResourceLocation.fromNamespaceAndPath(Galmc_api.MODID,resource);
-        this.id = resource;
-        readJson(Minecraft.getInstance().getResourceManager(),resourceLocation);
+        if(no_fuck(resource)) {
+            try {
+                ResourceLocation resourceLocation = ResourceLocation.fromNamespaceAndPath(Galmc_api.MODID, resource);
+                this.id = resource;
+
+                readJson(Minecraft.getInstance().getResourceManager(), resourceLocation);
+            } catch (ResourceLocationException e) {
+                LOGGER.error("资源路径不对且不符合格式", e);
+                disabled = true;
+            }
+        }else {
+            LOGGER.error("资源路径不对且不符合格式{}", resource);
+            disabled = true;
+        }
+
 
     }
     public final List<TextEntry> TEXTS = new ArrayList<>();
@@ -48,6 +62,15 @@ public class Character {
     public End_Execute execute;
 
     public CharacterMethods characterMethods = new CharacterMethods();
+    private boolean no_fuck(String s){
+        for (String a : GalResourceManger.getText()){
+            if(Objects.equals(a, s)) return true;
+        }
+        for (String a : GalResourceManger.getCCg()){
+            if(Objects.equals(a, s)) return true;
+        }
+        return false;
+    }
     private void readJson(ResourceManager resourceManager,ResourceLocation location) {
 
         // 使用 Minecraft 的 JSON 解析
@@ -118,16 +141,34 @@ public class Character {
     }
 
     public void render(GuiGraphics guiGraphics, GalScreen galScreen){
-        if(Objects.equals(this.render_execute, "null")) {
-            if(is_cg()){
-                int screenWidth = galScreen.width;
-                int screenHeight = galScreen.height;
-                galScreen.renderContain(guiGraphics,screenWidth,screenHeight,
-                        this.TEXTS.get(this.pointer).background);
+        if(!this.disabled) {
+            if (Objects.equals(this.render_execute, "null")) {
+                if (is_cg()) {
+                    guiGraphics.fill(0, 0, galScreen.width, galScreen.height, 0xFF000000);
+                    int ix = this.TEXTS.get(this.pointer).ix;
+                    int iy = this.TEXTS.get(this.pointer).iy;
+                    int wx = galScreen.width;
+                    int wy = galScreen.height;
+                    double scaleX = (double) wx / ix;
+                    double scaleY = (double) wy / iy;
+                    double scale = Math.min(scaleX, scaleY);   // 取较小缩放，保证完整显示
+
+                    int drawWidth = (int) Math.round(ix * scale);
+                    int drawHeight = (int) Math.round(iy * scale);
+
+                    int x = (wx - drawWidth) / 2;
+                    int y = (wy - drawHeight) / 2;
+                    guiGraphics.blit(
+                            this.TEXTS.get(this.pointer).background,
+                            x, y, // 位置
+                            0, 0,           // 纹理坐标
+                            drawWidth,drawHeight,  // 尺寸
+                            drawWidth,drawHeight       // 纹理尺寸
+                    );
+                } else this.TEXTS.get(this.pointer).render(guiGraphics, galScreen);
+            } else {
+                //characterMethods.execute(guiGraphics, this.render_execute, TEXTS, galScreen);
             }
-            else this.TEXTS.get(this.pointer).render(guiGraphics, galScreen);
-        }else {
-            characterMethods.execute(guiGraphics,this.render_execute,TEXTS,galScreen);
         }
     }
 

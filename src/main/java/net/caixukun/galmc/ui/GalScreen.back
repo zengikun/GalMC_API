@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
 import net.caixukun.galmc.Galmc_api;
 import net.caixukun.galmc.event.OpenUIEvent;
-import net.caixukun.galmc.resource.AudioPlayer;
+import net.caixukun.galmc.init.SoundInit;
 import net.caixukun.galmc.ui.character.Character;
 import net.caixukun.galmc.ui.character.NextText;
 import net.minecraft.client.Minecraft;
@@ -14,7 +14,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
-
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
@@ -28,13 +27,12 @@ import java.util.UUID;
 
 import static net.caixukun.galmc.event.OpenUIEvent.circle;
 
-public class GalScreen extends Screen {
+public class GalScreen_back extends Screen {
     public static final Logger LOGGER = LogUtils.getLogger();
     public Font fonta;
     ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(Galmc_api.MODID, "texture/gui/text.png");
     //GUI组件设置数据
     Character core;
-    private AudioPlayer SOUND = new AudioPlayer();
     public boolean auto=false;
     public boolean skip=false;
 
@@ -48,6 +46,7 @@ public class GalScreen extends Screen {
     private Button button3;
     private Button button4;
     NextText choice = null;
+
     //音乐
     public String old_music = null;
     private int music_tick;
@@ -55,13 +54,13 @@ public class GalScreen extends Screen {
     private boolean cg;
     private CGGalleryScreen cgGalleryScreen = null;
     public UUID player;
-    public GalScreen(String start, UUID player) {
+    public GalScreen_back(String start, UUID player) {
         super(Component.literal("启动！"));
         this.core = new Character(start);
         this.player = player;
         this.cg = false;
     }
-    public GalScreen(String start, UUID player,CGGalleryScreen cgGalleryScreen) {
+    public GalScreen_back(String start, UUID player, CGGalleryScreen cgGalleryScreen) {
         super(Component.literal("启动！"));
         this.core = new Character(start);
         this.player = player;
@@ -93,17 +92,14 @@ public class GalScreen extends Screen {
             if (this.core.music != null) {
                 if (!this.core.music.get("music").getAsString().equals(old_music)) {
                     stopSound();
-                    SOUND.stop();
                     try {
-                        SOUND.playID(this.core.music.get("music").getAsString());
-                    } catch (Exception e) {
-                        LOGGER.error("音频播放失败：可能音频路径不正确",e);
+                        playSound(SoundInit.REG_SOUNDS.get(this.core.music.get("music").getAsString()).get(), 1.0f, 1.0f);
+                    }catch (NullPointerException exception){
+                        LOGGER.error("音频播放失败：可能音频路径不正确",exception);
                     }
                 }
-
             } else {
                 stopSound();
-                SOUND.stop();
             }
             try {
                 old_music = this.core.music.get("music").getAsString();
@@ -131,9 +127,9 @@ public class GalScreen extends Screen {
         music_ticks++;//音乐连续播放
         if(music_ticks==music_tick){
             try {
-                SOUND.playID(this.core.music.get("music").getAsString());
-            }catch (Exception e) {
-                LOGGER.error("音频播放失败：可能音频路径不正确",e);
+                playSound(SoundInit.REG_SOUNDS.get(this.core.music.get("music").getAsString()).get(), 1.0f, 1.0f);
+            }catch (NullPointerException exception){
+                LOGGER.error("音频播放失败：可能音频路径不正确",exception);
             }
             music_ticks = 0;
         }
@@ -202,11 +198,9 @@ public class GalScreen extends Screen {
                     getX(1920,false), getY(356,false),  // 尺寸
                     getX(1920,false), getY(356,false)        // 纹理尺寸
             );
-
         }
     }
     private boolean isMouseOverArea(int mouseX, int mouseY, int x, int y, int width, int height) {
-
         return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
     };
     @Override
@@ -214,13 +208,13 @@ public class GalScreen extends Screen {
         // 左键点击事件处理
         if (buttona == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.choice==null) {
             // 检查是否点击了自定义区域
-            if(isMouseOverArea((int)getX_mouse(mouseX),(int) getY_mouse(mouseY),1496,1047,100,49)){
+            if(isMouseOverArea((int)mouseX,(int) mouseY,getX(1496),getY(307+740),getX(100),getY(49))){
                 this.auto = !this.auto;
-            } else if(isMouseOverArea((int)getX_mouse(mouseX),(int) getY_mouse(mouseY),1608,1047,100,49)){
+            } else if(isMouseOverArea((int)mouseX,(int) mouseY,getX(1608),getY(307+740),getX(100),getY(49))){
                 this.skip = !this.skip;
-            } else if(isMouseOverArea((int)getX_mouse(mouseX),(int) getY_mouse(mouseY),1832,1047,100,49)){
+            } else if(isMouseOverArea((int)mouseX,(int) mouseY,getX(1832),getY(307+740),getX(100),getY(49))){
                 this.onClose();
-            }else if (isMouseOverArea((int)getX_mouse(mouseX), (int)getY_mouse(mouseY), 0, 740,1920,356) && rendtext) {
+            }else if (isMouseOverArea((int)mouseX, (int)mouseY, 0, getY(740), getX(1920),getY(356)) && rendtext) {
                 next();
             }
         } else if (buttona == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
@@ -246,7 +240,6 @@ public class GalScreen extends Screen {
             button4.visible = false;
             button4.active = false;
         }
-        this.renderables.clear();
         this.core = new Character(path);
         this.button1 = null;
         this.button2 = null;
@@ -264,9 +257,9 @@ public class GalScreen extends Screen {
             //正常往下推进
             if(core.is_sound()){
                 try {
-                    SOUND.playID(core.getSound());
-                } catch (Exception e) {
-                    LOGGER.error("音频播放失败：可能音频路径不正确",e);
+                    playVoiceSound(SoundInit.REG_SOUNDS.get(core.getSound()).get(), 1.0f, 1.0f);
+                }catch (NullPointerException exception){
+                    LOGGER.error("音频播放失败：可能音频路径不正确",exception);
                 }
 
             }
@@ -461,59 +454,12 @@ public class GalScreen extends Screen {
         double scaledValue = wy * scaleFactor;
         return (int) (scaledValue + (isCoordinate ? offset : 0));
     }
-    public int getX_mouse(double x){
-        double screenWidth = this.width;
-        double screenHeight = this.height;
-        double aspectRatio = screenWidth / screenHeight;
-        double targetRatio = 16.0 / 9.0;
-
-        double k;
-        double a = 0;
-
-        if (aspectRatio <= targetRatio) {
-            k = screenWidth / 1920.0;
-            return (int) (x/k);
-        } else {
-            k = screenHeight / 1080.0;
-            a = 0.5*(screenWidth-k*1920.0);
-            if(x<a||x>screenWidth-a){
-                return -1;
-            }else {
-                return (int) ((x-a)/k);
-            }
-        }
-
-    }
-    public int getY_mouse(double y){
-        double screenWidth = this.width;
-        double screenHeight = this.height;
-        double aspectRatio = screenWidth / screenHeight;
-        double targetRatio = 16.0 / 9.0;
-
-        double k;
-        double a = 0;
-
-        if (aspectRatio <= targetRatio) {
-            k = screenWidth / 1920.0;
-            a = 0.5*(screenHeight-k*1080.0);
-            if(y<a||y>screenHeight-a){
-                return -1;
-            }else {
-                return (int) ((y-a)/k);
-            }
-        } else {
-            k = screenHeight /1080.0;
-            return (int) (y/k);
-        }
-
-    }
     @Override
     public void onClose(){
 
         if(cg && cgGalleryScreen!=null){
             Minecraft.getInstance().setScreen(cgGalleryScreen);
             stopSound();
-            SOUND.stop();
             super.onClose();
         }
         if(circle != -1){
@@ -523,8 +469,16 @@ public class GalScreen extends Screen {
             circle = -1;
         }
         stopSound();
-        SOUND.stop();
         super.onClose();
+    }
+    private void playSound(SoundEvent soundEvent, float volume, float pitch) {
+        if (this.minecraft != null && this.minecraft.player != null) {
+            this.minecraft.getSoundManager().play(
+                    SimpleSoundInstance.forUI(soundEvent, pitch, volume)
+            );
+        }else {
+            
+        }
     }
     SoundInstance old_soundEvent = null;
 

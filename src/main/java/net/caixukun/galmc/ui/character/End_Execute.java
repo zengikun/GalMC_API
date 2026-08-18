@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import net.caixukun.galmc.Galmc_api;
 import net.caixukun.galmc.event.ExecuteEvent;
 import net.caixukun.your_wife.execute.ExecuteMethods;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,22 @@ public class End_Execute {
         } else if (Objects.equals(type, "command")) {
             try {
                 for (String s : data) {
-                    ExecuteEvent.commands.add(s);
+                    ExecuteEvent.commands.add(new Pair<UUID, String>() {
+                        @Override
+                        public UUID getLeft() {
+                            return player;
+                        }
+
+                        @Override
+                        public String getRight() {
+                            return s;
+                        }
+
+                        @Override
+                        public String setValue(String value) {
+                            return "";
+                        }
+                    });
                 }
             }catch (RuntimeException e){
                 Galmc_api.LOGGER.error("执行失败");

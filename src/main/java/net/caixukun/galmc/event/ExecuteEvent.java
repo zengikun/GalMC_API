@@ -5,10 +5,14 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.UUID;
+
 public class ExecuteEvent {
-    public static ArrayList<String> commands = new ArrayList<>();
+    public static ArrayList<Pair<UUID,String>> commands = new ArrayList<>();
 
     @SubscribeEvent
     public void onPlayerTick(TickEvent.PlayerTickEvent event) {
@@ -21,15 +25,18 @@ public class ExecuteEvent {
         //   阶段分为 START 和 END，大部分逻辑放在 END 阶段执行
         if (event.phase == TickEvent.Phase.END) {
 
-            CommandSourceStack source = event.player.createCommandSourceStack()
-                    .withPosition(event.player.position())
-                    .withRotation(event.player.getRotationVector());
+
             // 你的代码逻辑
-            for (String s :commands){
-                try {
-                    event.player.getServer().getCommands().performPrefixedCommand(source, s);
-                }catch (NullPointerException e){
-                    Galmc_api.LOGGER.error(e.getMessage());
+            for (Pair<UUID,String> s :commands){
+                if(s.getLeft() == event.player.getUUID()) {
+                    CommandSourceStack source = event.player.createCommandSourceStack()
+                            .withPosition(event.player.position())
+                            .withRotation(event.player.getRotationVector());
+                    try {
+                        event.player.getServer().getCommands().performPrefixedCommand(source, s.getRight());
+                    } catch (NullPointerException e) {
+                        Galmc_api.LOGGER.error(e.getMessage());
+                    }
                 }
             }
             commands.clear();

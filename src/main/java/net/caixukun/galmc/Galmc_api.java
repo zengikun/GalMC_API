@@ -1,9 +1,9 @@
 package net.caixukun.galmc;
 
 import com.mojang.logging.LogUtils;
+import net.caixukun.galmc.event.sync.InformationServer;
 import net.caixukun.galmc.init.CommandInit;
 import net.caixukun.galmc.init.ItemInit;
-import net.caixukun.galmc.init.SoundInit;
 import net.caixukun.galmc.resource.GalResourceManger;
 import net.caixukun.galmc.event.OpenUIEvent;
 import net.caixukun.galmc.event.ExecuteEvent;
@@ -16,11 +16,21 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLPaths;
 import org.slf4j.Logger;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(Galmc_api.MODID)
@@ -39,14 +49,18 @@ public class Galmc_api {
         GalResourceManger.getText();
         GalResourceManger.getCgUI();
         ItemInit.ITEMS.register(modEventBus);
-        SoundInit.SOUND_EVENTS.register(modEventBus);
-        SoundInit.initSounds();
         MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
         modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(new ExecuteEvent());
         MinecraftForge.EVENT_BUS.register(new OpenUIEvent());
         modEventBus.addListener(this::addCreative);
 
+    }
+
+
+
+    private String toJsonArray(List<String> list) {
+        return "[" + list.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(",")) + "]";
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
